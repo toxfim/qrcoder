@@ -40,6 +40,12 @@ async function generateQRCode(chatId, url, size) {
   } else {
     try {
       const qrBuffer = await QRCode.toBuffer(url, { width: qrSize });
+      
+      if (!qrBuffer) {
+        bot.sendMessage(chatId, "❌ QR code could not be generated.");
+        return;
+      }
+      
       qrCache[cacheKey] = qrBuffer; // Cache qilish
 
       bot.sendPhoto(chatId, { source: qrBuffer }, { caption: "✅ Sizning QR kodingiz!" });
@@ -49,7 +55,6 @@ async function generateQRCode(chatId, url, size) {
     }
   }
 }
-
 
 // **Foydalanuvchi URL yuborganda (har safar ishlaydi)**
 bot.on('message', (msg) => {
@@ -114,3 +119,8 @@ function getQRCodeSize(size) {
     default: return 250;
   }
 }
+
+// Portni o'rnatish
+const port = process.env.PORT || 3000;
+bot.on("polling_error", (err) => console.log(err));
+console.log(`Server is running on port ${port}`);
