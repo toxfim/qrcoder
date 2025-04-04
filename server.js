@@ -69,10 +69,6 @@ bot.on('message', (msg) => {
     return; // Hech narsa qilmaymiz
   }
 
-  if (!isValidURL(text)) {
-    bot.sendMessage(chatId, "⚠️ Noto‘g‘ri havola. Iltimos, haqiqiy URL kiriting.");
-    return;
-  }
 
   // `http://` yoki `https://` bo‘lmasa, avtomatik qo‘shamiz
   if (!text.startsWith("http://") && !text.startsWith("https://")) {
@@ -104,8 +100,16 @@ bot.on("callback_query", (query) => {
 
 // URL tekshiruvchi funksiya
 function isValidURL(url) {
-  const regex = /^(https?:\/\/)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/.*)?$/;
-  return regex.test(url) || /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/.*)?$/.test(url);
+  // URL prefiksi bo'lishi kerak (http yoki https)
+  const regex = /^(https?:\/\/)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/[^\s]*)?$/;
+
+  // Agar URL bo'sh bo'lsa yoki noto'g'ri formatda bo'lsa, qaytadi
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  // URL o'zini tekshirish
+  return regex.test(url.trim());
 }
 
 // QR kod o‘lchami
