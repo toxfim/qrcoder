@@ -17,6 +17,16 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(chatId, "👋 Assalomu alaykum! QR kod yaratish uchun menga havola (URL) yuboring.");
 });
 
+// `/help` komandasi
+bot.onText(/\/help/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, "🛠️ Quyidagi komandalar mavjud:\n\n" +
+    "/start - Botni boshlash.\n" +
+    "/help - Bu yordam xabarini ko'rsatadi.\n" +
+    "QR kod yaratish uchun URL yuboring.\n" +
+    "QR kodning o'lchamini tanlash uchun tugmalarni bosing.");
+});
+
 // Inline tugmalar yaratish
 function getSizeButtons() {
   return {
@@ -36,19 +46,13 @@ async function generateQRCode(chatId, url, size) {
   const cacheKey = `${url}-${qrSize}`;
 
   if (qrCache[cacheKey]) {
-    bot.sendPhoto(chatId, { source: qrCache[cacheKey] }, { caption: "📌 Sizning QR kodingiz!" });
+    bot.sendPhoto(chatId, qrCache[cacheKey], { caption: "📌 Sizning QR kodingiz!" }, getSizeButtons());
   } else {
     try {
       const qrBuffer = await QRCode.toBuffer(url, { width: qrSize });
-      
-      if (!qrBuffer) {
-        bot.sendMessage(chatId, "❌ QR code could not be generated.");
-        return;
-      }
-      
       qrCache[cacheKey] = qrBuffer; // Cache qilish
 
-      bot.sendPhoto(chatId, { source: qrBuffer }, { caption: "✅ Sizning QR kodingiz!" });
+      bot.sendPhoto(chatId, qrBuffer, { caption: "✅ Sizning QR kodingiz!" }, getSizeButtons());
     } catch (err) {
       bot.sendMessage(chatId, "❌ Xatolik yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
       console.error(err);
@@ -56,12 +60,11 @@ async function generateQRCode(chatId, url, size) {
   }
 }
 
-// **Foydalanuvchi URL yuborganda (har safar ishlaydi)**
+// Foydalanuvchi URL yuborganda
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   let text = msg.text.trim();
 
-  // Agar foydalanuvchi bot komandasi yuborgan bo'lsa (masalan, /start, /help)
   if (text.startsWith('/')) {
     return; // Hech narsa qilmaymiz
   }
@@ -90,24 +93,19 @@ bot.on("callback_query", (query) => {
     return;
   }
 
-  // Agar foydalanuvchi hali link yubormagan bo‘lsa, chiqamiz
   if (!qrCache[chatId] || !qrCache[chatId].url) {
     bot.sendMessage(chatId, "⚠️ Iltimos, avval URL yuboring.");
     return;
   }
 
-  // QR yaratamiz
   const url = qrCache[chatId].url;
   generateQRCode(chatId, url, size);
-
-  // Foydalanuvchi holatini tozalash (har safar yangi QR yaratishi uchun)
-  delete qrCache[chatId];
 });
 
 // URL tekshiruvchi funksiya
 function isValidURL(url) {
   const regex = /^(https?:\/\/)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/.*)?$/;
-  return regex.test(url);
+  return regex.test(url) || /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/.*)?$/.test(url);
 }
 
 // QR kod o‘lchami
@@ -119,8 +117,3 @@ function getQRCodeSize(size) {
     default: return 250;
   }
 }
-
-// Portni o'rnatish
-const port = process.env.PORT || 3000;
-bot.on("polling_error", (err) => console.log(err));
-console.log(`Server is running on port ${port}`);
